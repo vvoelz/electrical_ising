@@ -42,7 +42,7 @@ for trial in range(ntrials):
     # create a sampler and simulate a trajectory
     s = IsingSampler(initial_state=e, depsilon=my_depsilons[trial])
     t = s.sample(nsteps)   # sample() returns a Trajectory object
-    t.save('%s%d_%s_deps%3.1f'%(outname, trial, tag, my_depsilons[trial]))
+    t.save('%s_%s_deps%3.1f'%(outname, tag, my_depsilons[trial]))
     
     # get last state
     e = np.copy(s.e)
