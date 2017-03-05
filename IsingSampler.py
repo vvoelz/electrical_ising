@@ -6,7 +6,7 @@ class IsingSampler(object):
     """An object for performing kinetic Monte Carlo sampling of the 
     'electrical Ising' model. """
     
-    def __init__(self, nx=20, ny=20, voltage=0.0, debug=False, initial_state=None, depsilon=20.0):
+    def __init__(self, nx=20, ny=20, voltage=0.0, debug=False, initial_state=None, depsilon=24.0):
         """Initialize the sampler object."""
         
         self.nx = nx  # number of cells in the x dimension
@@ -25,7 +25,7 @@ class IsingSampler(object):
         self.depsilon    = depsilon ## SHOULD be 24.0  # meV (this is equal to 2J of the standard Ising model) 
         
         # set kinetic Monte Carlo constants
-        self.pre_exponential_factor = 2.0e7 # units s^{-1}
+        self.nu = 2.0e7 # pre_exponential_factor, units  s^{-1}
         self.Bronsted_slope = 0.5    #
                
         # initialize a random configuration of electric dipoles  e
@@ -39,8 +39,7 @@ class IsingSampler(object):
         # compile a neighbor list for fast lookup
         self.neighborlist = None
         self.compile_neighborlist()
-        
-        
+               
         # initialize the number of activated nearest neighbors
         self.n = self.count_all_activated_neighbors(self.e)   
         if self.debug:
@@ -56,6 +55,16 @@ class IsingSampler(object):
         # which we can precompute.  
         self.activation_energy = np.array([ (2.0*(2.0-na)*self.depsilon - 1.0*self.dq*self.voltage) for na in range(5)])
         print 'self.activation_energy', self.activation_energy
+
+        # The alpha 0->1 rates also depend *only* on the number of activated neighbors (0 through 4),
+        # which we can precompute.        
+        self.alphas = np.array([self.nu*np.exp(-self.Bronsted_slope*self.activation_energy[na]/self.kT) for na in range(5)])
+        print 'self.alphas', self.alphas
+
+        # The beta 1->0 rates also depend *only* on the number of activated neighbors (0 through 4),
+        # which we can precompute.        
+        self.betas = np.array([self.nu*np.exp((1.-self.Bronsted_slope)*self.activation_energy[na]/self.kT) for na in range(5)])
+        print 'self.betas', self.betas
 
 
         # initialize rate constants for flipping a dipole
@@ -132,26 +141,26 @@ class IsingSampler(object):
             for j in range(self.ny):
                 
                 if e[i,j] == 0:
-                    alpha_beta[i,j] = self.calculate_alpha(n, i, j)
+                    alpha_beta[i,j] = self.alphas[n[i,j]]
                 else:
-                    alpha_beta[i,j] = self.calculate_beta(n, i, j)
+                    alpha_beta[i,j] = self.betas[n[i,j]]
                     
         return alpha_beta
                 
     
     
-    def calculate_alpha(self, n, i, j):
-        """Calculate activating rate constant 0->1 for a particular i,j cell"""   
-        return self.pre_exponential_factor*np.exp(-self.Bronsted_slope*self.activation_energy[n[i,j]]/self.kT)
+    #def calculate_alpha(self, n, i, j):
+    #    """Calculate activating rate constant 0->1 for a particular i,j cell"""   
+    #    return self.nu*np.exp(-self.Bronsted_slope*self.activation_energy[n[i,j]]/self.kT)
     
 
-    def calculate_beta(self, n, i, j):
-        """Calculate de-activating rate constant 1->0 for a particular i,j cell"""    
-        return self.pre_exponential_factor*np.exp((1.-self.Bronsted_slope)*self.activation_energy[n[i,j]]/self.kT)
+    #def calculate_beta(self, n, i, j):
+    #    """Calculate de-activating rate constant 1->0 for a particular i,j cell"""    
+    #    return self.nu*np.exp((1.-self.Bronsted_slope)*self.activation_energy[n[i,j]]/self.kT)
     
     
     
-    def sample(self, nsteps, print_every=10000, save_every=1000, energy_check=True):
+    def sample(self, nsteps, print_every=10000, save_every=1000, energy_check=False):
         """Perform kinetic Monte Carlo """
         
         nframes = nsteps/save_every 
@@ -224,7 +233,6 @@ class IsingSampler(object):
             # flip the selected cell
             self.e[iflip,jflip] = int(self.e[iflip,jflip]==0)
             
-
             
             # update the neighboring neighbor counts
             if self.e[iflip,jflip] == 1:  # the flip is 0 --> 1; add +1 to neighbor counts
@@ -239,9 +247,9 @@ class IsingSampler(object):
             
             # update the rates for the flipped cell,          
             if self.e[iflip,jflip] == 0:
-                self.alpha_beta[iflip,jflip] = self.calculate_alpha(self.n, iflip, jflip)
+                self.alpha_beta[iflip,jflip] = self.alphas[self.n[iflip, jflip]]
             else:
-                self.alpha_beta[iflip,jflip] = self.calculate_beta(self.n, iflip, jflip)
+                self.alpha_beta[iflip,jflip] = self.betas[self.n[iflip, jflip]]
                 
             # update current time
             time += tau
