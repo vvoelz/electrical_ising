@@ -154,16 +154,6 @@ class IsingSampler(object):
                 
     
     
-    #def calculate_alpha(self, n, i, j):
-    #    """Calculate activating rate constant 0->1 for a particular i,j cell"""   
-    #    return self.nu*np.exp(-self.Bronsted_slope*self.activation_energy[n[i,j]]/self.kT)
-    
-
-    #def calculate_beta(self, n, i, j):
-    #    """Calculate de-activating rate constant 1->0 for a particular i,j cell"""    
-    #    return self.nu*np.exp((1.-self.Bronsted_slope)*self.activation_energy[n[i,j]]/self.kT)
-    
-    
     
     def sample(self, nsteps, print_every=10000, save_every=1000, energy_check=False):
         """Perform kinetic Monte Carlo """
