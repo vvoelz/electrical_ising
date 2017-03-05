@@ -94,4 +94,38 @@ class IsingTrajectory(object):
         self.current_frame = self.traj.shape[0]
         
 
+        
+        
+    def discretize(self, outname, dt=1.0e-7):
+        """Discretize the kinetic MC trajectory to a discrete-time trajectory
+        amenable to Markov State Model analysis.
+        
+        INPUT
+        outname    - save output to <outname>.msmtraj.npy 
+        
+        PARAMETERS
+        dt         - the discrete time interval, in seconds.  (Default: 1.0e-7 s = 100 ns)
+        """
+
+        discrete_snaps = []
+        discrete_times = []
+        
+        i = 0
+        timestep = 0   # number of steps dt
+        while i < (self.nframes-1):
+            
+            while timestep*dt < self.stats[i,0]:
+                print timestep, timestep*dt, self.stats[i,0], self.traj[i,0:30],'...'
+                discrete_snaps.append( self.traj[i,:] )
+                discrete_times.append( timestep)
+                timestep += 1            
+            i += 1
+
+        # write this new trajectory to file
+        msm_traj = np.array(discrete_snaps).astype(bool)
+        outfile = trjname+'.msmtraj.npy'
+        np.save(outfile, msm_traj)
+        print 'Wrote:', outfile
+        
+
 
