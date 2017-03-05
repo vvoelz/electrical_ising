@@ -54,18 +54,20 @@ class IsingSampler(object):
         # The 0->1 activation energy depends *only* on the number of activated neighbors (0 through 4),
         # which we can precompute.  
         self.activation_energy = np.array([ (2.0*(2.0-na)*self.depsilon - 1.0*self.dq*self.voltage) for na in range(5)])
-        print 'self.activation_energy', self.activation_energy
+        if self.debug:
+            print 'self.activation_energy', self.activation_energy
 
         # The alpha 0->1 rates also depend *only* on the number of activated neighbors (0 through 4),
         # which we can precompute.        
         self.alphas = np.array([self.nu*np.exp(-self.Bronsted_slope*self.activation_energy[na]/self.kT) for na in range(5)])
-        print 'self.alphas', self.alphas
+        if self.debug:
+            print 'self.alphas', self.alphas
 
         # The beta 1->0 rates also depend *only* on the number of activated neighbors (0 through 4),
         # which we can precompute.        
         self.betas = np.array([self.nu*np.exp((1.-self.Bronsted_slope)*self.activation_energy[na]/self.kT) for na in range(5)])
-        print 'self.betas', self.betas
-
+        if self.debug:
+            print 'self.betas', self.betas
 
         # initialize rate constants for flipping a dipole
         self.alpha_beta = self.calculate_all_alpha_beta(self.e, self.n)
@@ -104,7 +106,9 @@ class IsingSampler(object):
         """Count the number of activated neighbors for a particular i,j cell."""
         
         count = 0
-        #for k in range(4):
+        
+        # ESCHEW FOR-LOOPS!
+        # for k in range(4):
         #    count += e[self.neighborlist[i,j,k,0],self.neighborlist[i,j,k,1]]       
 
         count += e[self.neighborlist[i,j,0:4,0],self.neighborlist[i,j,0:4,1]].sum()       
@@ -113,7 +117,8 @@ class IsingSampler(object):
 
     
     def calc_total_energy(self, e, n):
-        """Calculate the energy of the input state
+        """Calculate the energy of the input state.
+        NOTE:  Expensive 
         
         INPUT
         e     - an nx,ny array of 0 (resting) or 1 (activated)"""
@@ -204,6 +209,7 @@ class IsingSampler(object):
             # Pick a second random number r2 in order to determine which cell to flip.
             # Each cell has probability ai/a of being chosen.
             if (0):
+                # OLD routine (slow)
                 p = self.alpha_beta.ravel()/total_rate_a
                 r2 = np.random.rand()
                 flip_index = -1
@@ -214,9 +220,11 @@ class IsingSampler(object):
                 if self.debug:
                     print 'r2', r2, 'flip_index', flip_index,
             else:
-                # use fast numpy routines
+                # NEW routine (fast, using numpy routines)
                 flip_index = np.searchsorted(np.cumsum(self.alpha_beta.ravel()/total_rate_a), [np.random.rand()])[0]
-                #print 'flip_index', flip_index
+                if self.debug:
+                    print 'flip_index', flip_index,
+
             iflip, jflip = np.unravel_index(flip_index, (self.nx,self.ny))
             if self.debug:
                 print 'iflip, jflip', iflip, jflip
