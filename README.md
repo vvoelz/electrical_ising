@@ -3,4 +3,4 @@
 ### by Daniel Sigg and Vincent Voelz
 
 
-More description here: [ising_trajectory.ipynb](ising_trajectory.ipynb)
+More description here: [ising_sampler.ipynb](ising_sampler.ipynb)
