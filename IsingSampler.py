@@ -18,8 +18,8 @@ class IsingSampler(object):
         # set electrical constants
         self.gating_charge = 1.0  # units eu
         self.dq = self.gating_charge/float(self.ncells)  # the activating charge of each cell
-        self.voltage = voltage
-        self.k_Boltzmann = 0.086174 # Boltzmann's constant in meV/K
+        self.voltage = voltage   # units mV  
+        self.k_Boltzmann = 0.0861733034 # Boltzmann's constant in meV/K
         self.temperature = 290.0 # units K
         self.kT          = self.k_Boltzmann*self.temperature  # 25 meV at 290 K
         self.depsilon    = depsilon ## SHOULD be 24.0  # meV (this is equal to 2J of the standard Ising model) 
@@ -93,7 +93,6 @@ class IsingSampler(object):
             #               [isouth, jsouth],
             #               [iwest,  jwest],
             #               [ieast,  jeast]]
-
         for i in range(self.nx):
             for j in range(self.ny):
                 self.neighborlist[i,j,0,:] = [i, (j-1)%(self.ny)]
@@ -152,9 +151,7 @@ class IsingSampler(object):
                     
         return alpha_beta
                 
-    
-    
-    
+        
     def sample(self, nsteps, print_every=10000, save_every=1000, energy_check=False):
         """Perform kinetic Monte Carlo """
         
@@ -177,7 +174,7 @@ class IsingSampler(object):
                 self.t.tally(self.e, time, tau, self.energy, fwd_rate, back_rate)
             
             if step%print_every == 0:
-                print 'step', step, 'of', nsteps,
+                print 'step', step, 'of', nsteps, 'q =', self.e.sum()*self.dq, 
                 if energy_check:
                     print '| energy (on-the-fly total-recalc)', self.energy, self.calc_total_energy(self.e, self.n)
                 else:
@@ -222,9 +219,6 @@ class IsingSampler(object):
             # update the energy
             if self.e[iflip,jflip] == 1:  # the move will be 1->0
                 self.energy -= self.activation_energy[ self.n[iflip,jflip] ]
-                #print 'iflip,jflip', iflip,jflip
-                #print 'self.n[iflip,jflip]', self.n[iflip,jflip]
-                #print 'self.activation_energy[ self.n[iflip,jflip] ]', self.activation_energy[ self.n[iflip,jflip] ]
             else: # the move will be 0->1
                 self.energy += self.activation_energy[ self.n[iflip,jflip] ]
 
@@ -232,23 +226,28 @@ class IsingSampler(object):
             self.e[iflip,jflip] = int(self.e[iflip,jflip]==0)
             
             
-            # update the neighboring neighbor counts
-            if self.e[iflip,jflip] == 1:  # the flip is 0 --> 1; add +1 to neighbor counts
-                #for k in range(4):
-                #    self.n[ self.neighborlist[iflip,jflip,k,0],self.neighborlist[iflip,jflip,k,1]] += 1
-                self.n[ self.neighborlist[iflip,jflip,0:4,0],self.neighborlist[iflip,jflip,0:4,1]] += 1      
-
-            else:  # the flip is 0 --> 1; subtract 1 from neighbor counts
-                #for k in range(4):
-                #    self.n[ self.neighborlist[iflip,jflip,k,0],self.neighborlist[iflip,jflip,k,1]] -= 1
-                self.n[ self.neighborlist[iflip,jflip,0:4,0],self.neighborlist[iflip,jflip,0:4,1]] -= 1 
+            ### update neighbors ###
+            ineighbors = self.neighborlist[iflip,jflip,0:4,0]
+            jneighbors = self.neighborlist[iflip,jflip,0:4,1]
             
-            # update the rates for the flipped cell,          
+            # update the neighbor counts
+            if self.e[iflip,jflip] == 1:  # the flip is 0 --> 1; add +1 to neighbor counts
+                self.n[ineighbors, jneighbors] += 1      
+            else:  # the flip is 1 --> 0; subtract 1 from neighbor counts
+                self.n[ineighbors, jneighbors] -= 1 
+            
+            # update the rates for the flipped cell...   
             if self.e[iflip,jflip] == 0:
                 self.alpha_beta[iflip,jflip] = self.alphas[self.n[iflip, jflip]]
             else:
                 self.alpha_beta[iflip,jflip] = self.betas[self.n[iflip, jflip]]
-                
+            
+            # ... and its neighbors
+            neighboring_e = self.e[ineighbors, jneighbors]
+            neighboring_n = self.n[ineighbors, jneighbors]
+            self.alpha_beta[ineighbors, jneighbors] = \
+                    np.where(neighboring_e == 0, self.alphas[neighboring_n], self.betas[neighboring_n])
+                        
             # update current time
             time += tau
 
