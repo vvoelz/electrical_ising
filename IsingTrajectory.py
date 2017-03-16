@@ -61,7 +61,7 @@ class IsingTrajectory(object):
         print 'Wrote', outfile_traj
 
         
-    def load(self, name):
+    def load(self, name, verbose=False):
         """Load <name>.stats.npy and <inname>.traj.npy"""
         
         # parse filenames
@@ -81,18 +81,58 @@ class IsingTrajectory(object):
         nframes, nx, ny = [int(fields[i]) for i in [0,1,2]]
         #print 'nframes, nx, ny', nframes, nx, ny
         self.allocate_frames(nframes, nx, ny)
-        print 'Read', infile_stats
+        if verbose:
+            print 'Read', infile_stats
         
         # read in stats
         self.stats = np.loadtxt(infile_stats)
         
         # read in trajectory data   
         self.traj = np.load(infile_traj).astype(int)
-        print 'Read', infile_traj
+        if verbose:
+            print 'Read', infile_traj
         
         self.nframes = self.traj.shape[0]
         self.current_frame = self.traj.shape[0]
         
+
+    def append(self, name, verbose=False):
+        """Load in a new <name>.stats.npy and <inname>.traj.npy and append it to the currect trajectory"""
+
+        # parse filenames
+        infile_stats = name + '.stats.dat'
+        infile_traj = name + '.traj.npy'
+
+        # get header info
+        fin = open(infile_stats, 'r')
+        header_lines = [fin.readline() for i in range(2)]
+        fin.close()
+
+        # get array sizes and allocate arrays
+        fields = header_lines[0].strip('#').split()
+        new_nframes, new_nx, new_ny = [int(fields[i]) for i in [0,1,2]]
+
+        # appended trajectory must be the same size
+        assert (self.nx == new_nx) and (self.ny == new_ny), "The dimensions of the traj to append nx,ny = %d,%d do not match %d,%d"%(new_nx, new_ny, self.nx,self.ny)
+
+        # read in stats
+        new_stats = np.loadtxt(infile_stats)
+        new_stats[:,0] += self.stats[-1,0]  # make time continuous
+        self.stats = np.vstack( (self.stats, new_stats) )
+        if verbose:
+            print 'Appended', infile_stats, 
+        del new_stats
+
+        # read in trajectory data   
+        self.traj = np.vstack( (self.traj, np.load(infile_traj).astype(int)) )
+        if verbose:
+            print infile_traj
+
+        self.nframes = self.traj.shape[0]
+        self.current_frame = self.traj.shape[0]
+
+        # update the header
+        self.stats_header = '%d %d %d\ntime(s)\tdwell_time(s)\tenergy(meV)\tfwd_rate(Hz)\tback_rate(Hz)'%(self.nframes, self.nx, self.ny)
 
         
         
