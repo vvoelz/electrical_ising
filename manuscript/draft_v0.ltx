@@ -93,7 +93,7 @@
 
 
 \begin{abstract}
-[ Abstract goes here ]
+Extracting transport rates from atomically-detailed simulations of high-dimensional systems such as voltage gated ion channels remains a challenging prospect.  One approach to obtaining this kinetic information is to calculate the potential of mean force over a 1D reaction coordinate, which, along with position-dependent diffusion coefficients, can be used to estimate rates.  To test various approaches for doing this, we use as a model system a  2D Ising model that captures the essential behavior of ion channel voltage gating.   From simulated kinetic Monte Carlo trajectories we estimate the phenomenological rate of gating, and compare it to mean first passage times predicted by a Smoluchowski equation and simulated  Langevin dynamics in 1D the gating current coordinate.   We also test an alternative approach in which time-lagged independent component analysis (tICA) is used to project the dynamics to a low-dimensional subspace enabling microstate clustering and subsequent construction of a Markov State Model (MSM) of the dynamics.  While all methods tested overestimate the phenomenological rate, the MSM approach performs the best, underscoring the importance of preserving mesoscopic detail when inferring kinetics from low-dimensional projections of simulation data. 
 \end{abstract}
 \keywords{}
 \maketitle
@@ -118,10 +118,6 @@
 
 %%%%%%%%%%%%%%%%%%%%---Section Dividing Line---%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%---Section Dividing Line---%%%%%%%%%%%%%%%%%%%%%%%%
-
-\section*{Abstract}
-
-Extracting transport rates from atomically-detailed simulations of high-dimensional systems such as voltage gated ion channels remains a challenging prospect.  One approach to obtaining this kinetic information is to calculate the potential of mean force over a 1D reaction coordinate, which, along with position-dependent diffusion coefficients, can be used to estimate rates.  To test various approaches for doing this, we use as a model system a  2D Ising model that captures the essential behavior of ion channel voltage gating.   From simulated kinetic Monte Carlo trajectories we estimate the phenomenological rate of gating, and compare it to mean first passage times predicted by a Smoluchowski equation and simulated  Langevin dynamics in 1D the gating current coordinate.   We also test an alternative approach in which time-lagged independent component analysis (tICA) is used to project the dynamics to a low-dimensional subspace enabling microstate clustering and subsequent construction of a Markov State Model (MSM) of the dynamics.  While all methods tested overestimate the phenomenological rate, the MSM approach performs the best, underscoring the importance of preserving mesoscopic detail when inferring kinetics from low-dimensional projections of simulation data.   
 
 
 \section*{Introduction}
